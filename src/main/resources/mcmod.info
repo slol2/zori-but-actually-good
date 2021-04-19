@@ -1,17 +1,12 @@
 [
   {
-    "modid": "zori",
-    "name": "zori",
-    "description": "zori",
-    "version": "1.2.0",
+    "modid": "runite",
+    "name": "Runite",
+    "description": "XULU SKID WTF!!!!!!!!!!!!!!!!!",
+    "version": "1.2",
     "mcversion": "1.12.2",
-    "logoFile": "niggahack.png",
-    "url": "https://freemanatee.org",
-    "updateUrl": "",
-    "authorList": [
-      "Novola, PR2CE, Alpha432, 3911"
-    ],
-    "screenshots": [],
-    "dependencies": []
+    "logoFile": "assets/runite/textures/runite.png",
+    "authorList": ["obamabob", "zopac", "Elementars"],
+    "credits": "obamabob, zopac, Elementars, 086, MintyCodes, John200410, Hexeption, HeroCodes, CCblueX",
   }
 ]

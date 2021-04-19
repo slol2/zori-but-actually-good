@@ -1,8 +1,5 @@
-# OnPoint.IE/Zori2
-Zori2 is a utility mod for Minecraft 1.12.2 designed for 2b2t Crystal PvP
-## Developers
-Novola (Mutant One), Zopac (Mutant Two), BrownZombie (PRO-GAMER) (God Developer) (Made OffhandPearl), Terik (Literal God)
-## Credits
-- Gopro336 - OyVey buildable src based off of the one me and fluffycq made
-- Fluffycq - Helping me with the OyVey buildable src (was still chinese but still)
-- Allah
+# Runite
+![Logo](https://raw.githubusercontent.com/obamabob/Runite/master/src/main/resources/assets/runite/textures/runite.png?token=AJ4SSBUVNYXOCK5C5EG5QYTAFCPSK)
+## By: obamabob, and zopac
+Removed some of the chinese out of xulu, and added some modules that you cant find in future (and some that you can find).  
+Most combat modules are skidded from gamesense

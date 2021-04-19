@@ -1,0 +1,21 @@
+{
+  "required": true,
+  "compatibilityLevel": "JAVA_8",
+  "package": "com.obamabob.runite.mixin.mixins",
+  "refmap": "mixins.runite.refmap.json",
+  "mixins": [
+    "MixinEntity",
+    "MixinGuiScreen",
+    "MixinItemRenderer",
+    "MixinLayerArmorBase",
+    "MixinMinecraft",
+    "MixinModelPlayer",
+    "MixinNetworkManager",
+    "MixinPlayerControllerMP",
+    "MixinRenderEnderCrystal",
+    "MixinRenderItem",
+    "MixinRenderLiving",
+    "MixinRenderLivingBase",
+    "MixinRenderPlayer"
+  ]
+}
