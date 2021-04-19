@@ -1,66 +1,70 @@
-package com.obamabob.runite.module.modules.misc;
+package me.alpha432.oyvey.features.modules.misc;
 
-import com.obamabob.runite.command.Command;
-import com.obamabob.runite.module.Module;
+import com.mojang.realmsclient.gui.ChatFormatting;
+import me.alpha432.oyvey.OyVey;
+import me.alpha432.oyvey.features.command.Command;
+import me.alpha432.oyvey.features.modules.Module;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityEnderPearl;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraftforge.common.MinecraftForge;
 
+import java.util.HashMap;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class PearlNotify extends Module {
-
-    ConcurrentHashMap<UUID, Integer> uuidMap = new ConcurrentHashMap<>();
+    private final HashMap<EntityPlayer, UUID> list;
+    private Entity enderPearl;
+    private boolean flag;
 
     public PearlNotify() {
-        super("PearlNotify", Category.COMBAT);
+        super("PearlResolver", "Notify pearl throws.", Category.MISC, true, false, false);
+        list = new HashMap<EntityPlayer, UUID>();
     }
 
     @Override
     public void onEnable() {
-        MinecraftForge.EVENT_BUS.register(this);
+        flag = true;
     }
 
     @Override
-    public void onDisable() {
-        MinecraftForge.EVENT_BUS.unregister(this);
-    }
-
-    @Override
-    public void onTick() {
-        if (mc.world == null) return;
-        for (Entity entity : mc.world.loadedEntityList) {
-            if (entity instanceof EntityEnderPearl) {
-                EntityPlayer closest = null;
-                for (EntityPlayer p : mc.world.playerEntities) {
-                    if (closest == null || entity.getDistance(p) < entity.getDistance(closest)) {
-                        closest = p;
-                    }
-                }
-                if (closest != null && closest.getDistance(entity) < 2 && !uuidMap.containsKey(entity.getUniqueID()) && !closest.getName().equalsIgnoreCase(mc.player.getName())) {
-                    uuidMap.put(entity.getUniqueID(), 200);
-                    sendChatMessage(closest.getName() + " threw a pearl towards " + getTitle(entity.getHorizontalFacing().getName()) + "!");
-                }
+    public void onUpdate() {
+        if (PearlNotify.mc.world == null || PearlNotify.mc.player == null) {
+            return;
+        }
+        enderPearl = null;
+        for (final Entity e : PearlNotify.mc.world.loadedEntityList) {
+            if (e instanceof EntityEnderPearl) {
+                enderPearl = e;
+                break;
             }
         }
-        this.uuidMap.forEach((name, timeout) -> {
-            if (timeout <= 0) {
-                this.uuidMap.remove(name);
+        if (enderPearl == null) {
+            flag = true;
+            return;
+        }
+        EntityPlayer closestPlayer = null;
+        for (final EntityPlayer entity : PearlNotify.mc.world.playerEntities) {
+            if (closestPlayer == null) {
+                closestPlayer = entity;
             } else {
-                this.uuidMap.put(name, timeout - 1);
+                if (closestPlayer.getDistance(enderPearl) <= entity.getDistance(enderPearl)) {
+                    continue;
+                }
+                closestPlayer = entity;
             }
-        });
-    }
-
-    public String getTitle(String in) {
-        if (in.equalsIgnoreCase("west")) {
-            return "east";
-        } else if (in.equalsIgnoreCase("east")) {
-            return "west";
-        } else {
-            return in;
+        }
+        if (closestPlayer == PearlNotify.mc.player) {
+            flag = false;
+        }
+        if (closestPlayer != null && flag) {
+            String faceing = enderPearl.getHorizontalFacing().toString();
+            if (faceing.equals("west")) {
+                faceing = "east";
+            } else if (faceing.equals("east")) {
+                faceing = "west";
+            }
+            Command.sendSilentMessage(OyVey.friendManager.isFriend(closestPlayer.getName()) ? (ChatFormatting.AQUA + closestPlayer.getName() + ChatFormatting.DARK_GRAY + " has just thrown a pearl heading " + faceing + "!") : (ChatFormatting.RED + closestPlayer.getName() + ChatFormatting.DARK_GRAY + " has just thrown a pearl heading " + faceing + "!"));
+            flag = false;
         }
     }
 }

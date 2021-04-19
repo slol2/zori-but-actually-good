@@ -1,13 +1,15 @@
-package com.obamabob.runite.module.modules.render;
+package me.alpha432.oyvey.features.modules.render;
 
-import com.obamabob.runite.Runite;
-import com.obamabob.runite.event.events.EventRender;
-import com.obamabob.runite.friend.Friends;
-import com.obamabob.runite.module.Module;
-import com.obamabob.runite.settings.Setting;
-import com.obamabob.runite.util.*;
+import me.alpha432.oyvey.OyVey;
+import me.alpha432.oyvey.event.events.Render3DEvent;
+import me.alpha432.oyvey.features.modules.Module;
+import me.alpha432.oyvey.features.setting.Setting;
+import me.alpha432.oyvey.util.*;
+import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
+import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
@@ -18,84 +20,98 @@ import net.minecraft.item.ItemTool;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.text.TextFormatting;
 import org.lwjgl.opengl.GL11;
-import net.minecraft.client.gui.FontRenderer;
 
 import java.awt.*;
 import java.util.*;
 
-public class Nametags extends Module {
+/**
+ * @Author Novola & zopac
+ * @Version v1.0.4/b4
+ * @Date 28/1/2021 (1/28/2021)
+ */
 
-    public Nametags() {
-        super("Nametags", Category.RENDER);
+public class NameTags extends Module {
+
+    private final Setting<Boolean> rect = register(new Setting("Rectangle", true));
+    private final Setting<Boolean> armor = register(new Setting("Armor", true));
+    private final Setting<Boolean> reversed = register(new Setting("ArmorReversed", false, v -> armor.getValue()));
+    private final Setting<Boolean> health = register(new Setting("Health", true));
+    private final Setting<Boolean> ping = register(new Setting("Ping", true));
+    private final Setting<Boolean> gamemode = register(new Setting("Gamemode", false));
+    private final Setting<Boolean> entityID = register(new Setting("EntityID", false));
+    private final Setting<Boolean> heldStackName = register(new Setting("StackName", true));
+
+    private final Setting<Boolean> max = register(new Setting("Max", true));
+    private final Setting<Boolean> maxText = register(new Setting("NoMaxText", false, v -> max.getValue()));
+    private final Setting<Integer> Mred = register(new Setting("Max-Red", 178, 0, 255, v -> max.getValue()));
+    private final Setting<Integer> Mgreen = register(new Setting("Max-Green", 52, 0, 255, v -> max.getValue()));
+    private final Setting<Integer> Mblue = register(new Setting("Max-Blue", 57, 0, 255, v -> max.getValue()));
+
+    private final Setting<Float> size = register(new Setting("Size", 0.3f, 0.1f, 20.0f));
+    private final Setting<Boolean> scaleing = register(new Setting("Scale", false));
+    private final Setting<Boolean> smartScale = register(new Setting("SmartScale", false, v -> scaleing.getValue()));
+    private final Setting<Float> factor = register(new Setting("Factor", 0.3f, 0.1f, 1.0f, v -> scaleing.getValue()));
+
+    private final Setting<Boolean> textcolor = register(new Setting("TextColor", true));
+    private final Setting<Boolean> NCRainbow = register(new Setting("Text-Rainbow", false, v -> textcolor.getValue()));
+    private final Setting<Integer> NCred = register(new Setting("Text-Red", 255, 0, 255, v -> textcolor.getValue()));
+    private final Setting<Integer> NCgreen = register(new Setting("Text-Green", 255, 0, 255, v -> textcolor.getValue()));
+    private final Setting<Integer> NCblue = register(new Setting("Text-Blue", 255, 0, 255, v -> textcolor.getValue()));
+
+    private final Setting<Boolean> outline = register(new Setting("Outline", true));
+    private final Setting<Boolean> ORainbow = register(new Setting("Outline-Rainbow", false, v -> outline.getValue()));
+    private final Setting<Float> Owidth = register(new Setting("Outline-Width", 1.3f, 0f, 5f, v -> outline.getValue()));
+    private final Setting<Integer> Ored = register(new Setting("Outline-Red", 255, 0, 255, v -> outline.getValue()));
+    private final Setting<Integer> Ogreen = register(new Setting("Outline-Green", 255, 0, 255, v -> outline.getValue()));
+    private final Setting<Integer> Oblue = register(new Setting("Outline-Blue", 255, 0, 255, v -> outline.getValue()));
+
+    private final Setting<Boolean> friendcolor = register(new Setting("FriendColor", true));
+    private final Setting<Boolean> FCRainbow = register(new Setting("Friend-Rainbow", false, v -> friendcolor.getValue()));
+    private final Setting<Integer> FCred = register(new Setting("Friend-Red", 0, 0, 255, v -> friendcolor.getValue()));
+    private final Setting<Integer> FCgreen = register(new Setting("Friend-Green", 213, 0, 255, v -> friendcolor.getValue()));
+    private final Setting<Integer> FCblue = register(new Setting("Friend-Blue", 255, 0, 255, v -> friendcolor.getValue()));
+    private final Setting<Boolean> FORainbow = register(new Setting("FriendOutline-Rainbow", false, v -> outline.getValue() && friendcolor.getValue()));
+    private final Setting<Integer> FOred = register(new Setting("FriendOutline-Red", 0, 0, 255, v -> outline.getValue() && friendcolor.getValue()));
+    private final Setting<Integer> FOgreen = register(new Setting("FriendOutline-Green", 213, 0, 255, v -> outline.getValue() && friendcolor.getValue()));
+    private final Setting<Integer> FOblue = register(new Setting("FriendOutline-Blue", 255, 0, 255, v -> outline.getValue() && friendcolor.getValue()));
+
+    private final Setting<Boolean> sneakcolor = register(new Setting("Sneak", false));
+    private final Setting<Boolean> sneak = register(new Setting("EnableSneak", true, v -> sneakcolor.getValue()));
+    private final Setting<Boolean> SCRainbow = register(new Setting("Sneak-Rainbow", false, v -> sneakcolor.getValue()));
+    private final Setting<Integer> SCred = register(new Setting("Sneak-Red", 245, 0, 255, v -> sneakcolor.getValue()));
+    private final Setting<Integer> SCgreen = register(new Setting("Sneak-Green", 0, 0, 255, v -> sneakcolor.getValue()));
+    private final Setting<Integer> SCblue = register(new Setting("Sneak-Blue", 122, 0, 255, v -> sneakcolor.getValue()));
+    private final Setting<Boolean> SORainbow = register(new Setting("SneakOutline-Rainbow", false, v -> outline.getValue() && sneakcolor.getValue()));
+    private final Setting<Integer> SOred = register(new Setting("SneakOutline-Red", 245, 0, 255, v -> outline.getValue() && sneakcolor.getValue()));
+    private final Setting<Integer> SOgreen = register(new Setting("SneakOutline-Green", 0, 0, 255, v -> outline.getValue() && sneakcolor.getValue()));
+    private final Setting<Integer> SOblue = register(new Setting("SneakOutline-Blue", 122, 0, 255, v -> outline.getValue() && sneakcolor.getValue()));
+
+    private final Setting<Boolean> invisiblescolor = register(new Setting("InvisiblesColor", false));
+    private final Setting<Boolean> invisibles = register(new Setting("EnableInvisibles", true, v -> invisiblescolor.getValue()));
+    private final Setting<Boolean> ICRainbow = register(new Setting("Invisible-Rainbow", false, v -> invisiblescolor.getValue()));
+    private final Setting<Integer> ICred = register(new Setting("Invisible-Red", 148, 0, 255, v -> invisiblescolor.getValue()));
+    private final Setting<Integer> ICgreen = register(new Setting("Invisible-Green", 148, 0, 255, v -> invisiblescolor.getValue()));
+    private final Setting<Integer> ICblue = register(new Setting("Invisible-Blue", 148, 0, 255, v -> invisiblescolor.getValue()));
+    private final Setting<Boolean> IORainbow = register(new Setting("InvisibleOutline-Rainbow", false, v -> outline.getValue() && invisiblescolor.getValue()));
+    private final Setting<Integer> IOred = register(new Setting("InvisibleOutline-Red", 148, 0, 255, v -> outline.getValue() && invisiblescolor.getValue()));
+    private final Setting<Integer> IOgreen = register(new Setting("InvisibleOutline-Green", 148, 0, 255, v -> outline.getValue() && invisiblescolor.getValue()));
+    private final Setting<Integer> IOblue = register(new Setting("InvisibleOutline-Blue", 148, 0, 255, v -> outline.getValue() && invisiblescolor.getValue()));
+
+    private static NameTags INSTANCE = new NameTags();
+
+    public NameTags() {
+        super("NameTags", "Renders info about the player on a NameTag", Module.Category.RENDER, false, false, false);
     }
 
-    private final Setting<Boolean> armor = register(new Setting<>("Armor", this, true));
-    private final Setting<Boolean> reversed = register(new Setting<>("ArmorReversed", this, true));
-    private final Setting<Boolean> health = register(new Setting<>("Health",this, true));
-    private final Setting<Boolean> ping = register(new Setting<>("Ping",this, true));
-    private final Setting<Boolean> gamemode = register(new Setting<>("Gamemode",this, false));
-    private final Setting<Boolean> entityID = register(new Setting<>("EntityID",this, false));
-    private final Setting<Boolean> heldStackName = register(new Setting<>("StackName",this, true));
-
-    private final Setting<Boolean> max = register(new Setting<>("Max", this,true));
-    private final Setting<Boolean> maxText = register(new Setting<>("NoMaxText", this,false));
-
-    private final Setting<Float> size = register(new Setting<>("Size",this, 2.0f, 0.1f, 20.0f));
-    private final Setting<Boolean> scaleing = register(new Setting<>("Scale",this, false));
-    private final Setting<Boolean> smartScale = register(new Setting<>("SmartScale", this,false));
-    private final Setting<Float> factor = register(new Setting<>("Factor", this,0.3f, 0.1f, 1.0f));
-
-    private final Setting<Boolean> NCRainbow = register(new Setting<>("Text-Rainbow", this,false));
-    private final Setting<Integer> NCred = register(new Setting<>("Text-Red", this,255, 0, 255));
-    private final Setting<Integer> NCgreen = register(new Setting<>("Text-Green", this,255, 0, 255));
-    private final Setting<Integer> NCblue = register(new Setting<>("Text-Blue", this,255, 0, 255));
-
-    private final Setting<Boolean> FCRainbow = register(new Setting<>("Friend-Rainbow",this, false));
-    private final Setting<Integer> FCred = register(new Setting<>("Friend-Red",this, 0, 0, 255));
-    private final Setting<Integer> FCgreen = register(new Setting<>("Friend-Green", this,213, 0, 255));
-    private final Setting<Integer> FCblue = register(new Setting<>("Friend-Blue",this, 255, 0, 255));
-
-    private final Setting<Boolean> sneak = register(new Setting<>("Sneak",this, true));
-    private final Setting<Boolean> SCRainbow = register(new Setting<>("Sneak-Rainbow", this,false));
-    private final Setting<Integer> SCred = register(new Setting<>("Sneak-Red", this,245, 0, 255));
-    private final Setting<Integer> SCgreen = register(new Setting<>("Sneak-Green", this,0, 0, 255));
-    private final Setting<Integer> SCblue = register(new Setting<>("Text-Blue", this,122, 0, 255));
-
-    private final Setting<Boolean> invisibles = register(new Setting<>("Invisibles",this, true));
-    private final Setting<Boolean> ICRainbow = register(new Setting<>("1-Rainbow",this, false));
-    private final Setting<Integer> ICred = register(new Setting<>("Invisible-Red",this, 148, 0, 255));
-    private final Setting<Integer> ICgreen = register(new Setting<>("Invisible-Green",this, 148, 0, 255));
-    private final Setting<Integer> ICblue = register(new Setting<>("Invisible-Blue",this, 148, 0, 255));
-
-    private final Setting<Boolean> outline = register(new Setting<>("Outline", this, true));
-    private final Setting<Float> Owidth = register(new Setting<>("Outline-Width",this, 1.5f, 0f, 3f));
-    private final Setting<Boolean> ORainbow = register(new Setting<>("Outline-Rainbow", this, true));
-    private final Setting<Integer> Ored = register(new Setting<>("Outline-Red", this, 255, 0, 255));
-    private final Setting<Integer> Ogreen = register(new Setting<>("Outline-Green",this, 255, 0, 255));
-    private final Setting<Integer> Oblue = register(new Setting<>("Outline-Blue", this,255, 0, 255));
-    private final Setting<Boolean> FORainbow = register(new Setting<>("FriendOutline-Rainbow", this,false));
-    private final Setting<Integer> FOred = register(new Setting<>("FriendOutline-Red", this,0, 0, 255));
-    private final Setting<Integer> FOgreen = register(new Setting<>("FriendOutline-Green", this,213, 0, 255));
-    private final Setting<Integer> FOblue = register(new Setting<>("FriendOutline-Blue", this,255, 0, 255));
-    private final Setting<Boolean> IORainbow = register(new Setting<>("InvisibleOutline-Rainbow", this,false));
-    private final Setting<Integer> IOred = register(new Setting<>("InvisibleOutline-Red", this,148, 0, 255));
-    private final Setting<Integer> IOgreen = register(new Setting<>("InvisibleOutline-Green", this,148, 0, 255));
-    private final Setting<Integer> IOblue = register(new Setting<>("InvisibleOutline-Blue", this,148, 0, 255));
-    private final Setting<Boolean> SORainbow = register(new Setting<>("SneakOutline-Rainbow", this,false));
-    private final Setting<Integer> SOred = register(new Setting<>("SneakOutline-Red", this,245, 0, 255));
-    private final Setting<Integer> SOgreen = register(new Setting<>("SneakOutline-Green", this,0, 0, 255));
-    private final Setting<Integer> SOblue = register(new Setting<>("SneakOutline-Blue", this,122, 0, 255));
-
-    private static Nametags INSTANCE = new Nametags();
-
-    public static Nametags getInstance() {
+    public static NameTags getInstance() {
         if (INSTANCE == null) {
-            INSTANCE = new Nametags();
+            INSTANCE = new NameTags();
         }
         return INSTANCE;
     }
 
-    public void onWorldRender(EventRender event) {
+    @Override
+    public void onRender3D(Render3DEvent event) {
         for (EntityPlayer player : mc.world.playerEntities) {
             if (player != null && !player.equals(mc.player) && player.isEntityAlive() && (!player.isInvisible() || invisibles.getValue())) {
                 double x = interpolate(player.lastTickPosX, player.posX, event.getPartialTicks()) - mc.getRenderManager().renderPosX;
@@ -120,7 +136,7 @@ public class Nametags extends Module {
 
         String displayTag = getDisplayTag(player);
         double distance = camera.getDistance(x + mc.getRenderManager().viewerPosX, y + mc.getRenderManager().viewerPosY, z + mc.getRenderManager().viewerPosZ);
-        int width = mc.fontRenderer.getStringWidth(displayTag) / 2;
+        int width = renderer.getStringWidth(displayTag) / 2;
         double scale = (0.0018 + size.getValue() * (distance * factor.getValue())) / 1000.0;
 
         if (distance <= 8 && smartScale.getValue()) {
@@ -143,25 +159,24 @@ public class Nametags extends Module {
         GlStateManager.disableDepth();
         GlStateManager.enableBlend();
         GlStateManager.enableBlend();
-        if (outline.getValue()) {
-            drawBorderedRectReliant((float) (-width - 1), (float) (-mc.fontRenderer.FONT_HEIGHT), (float) (width), 1.0f, (float)Owidth.getValue(), 1426064384, this.getOutlineColor(player));
-        } else {
-            drawBorderedRectReliant((float) (-width - 1), (float) (-mc.fontRenderer.FONT_HEIGHT), (float) (width), 1.0f, 1.8f, 1426064384, 855638016);
+        if (this.rect.getValue()) {
+            this.drawRect(-width - 2, -(NameTags.mc.fontRenderer.FONT_HEIGHT + 1), (float) width + 2.0f, 1.5f, 0x55000000);
         }
-
+        if (outline.getValue()) {
+            this.drawOutlineRect(-width - 2, -(NameTags.mc.fontRenderer.FONT_HEIGHT + 1), (float) width + 2.0f, 1.5f, getOutlineColor(player));
+        }
         GlStateManager.disableBlend();
-
         ItemStack renderMainHand = player.getHeldItemMainhand().copy();
         if (renderMainHand.hasEffect() && (renderMainHand.getItem() instanceof ItemTool || renderMainHand.getItem() instanceof ItemArmor)) {
             renderMainHand.stackSize = 1;
         }
 
-        if (heldStackName.getValue() && !renderMainHand.isEmpty() && renderMainHand.getItem() != Items.AIR) {
+        if (heldStackName.getValue() && !renderMainHand.isEmpty && renderMainHand.getItem() != Items.AIR) {
             String stackName = renderMainHand.getDisplayName();
-            int stackNameWidth = mc.fontRenderer.getStringWidth(stackName) / 2;
+            int stackNameWidth = renderer.getStringWidth(stackName) / 2;
             GL11.glPushMatrix();
             GL11.glScalef(0.75f, 0.75f, 0);
-            mc.fontRenderer.drawStringWithShadow(stackName, -stackNameWidth, -(getBiggestArmorTag(player) + 20), 0xFFFFFFFF);
+            renderer.drawStringWithShadow(stackName, -stackNameWidth, -(getBiggestArmorTag(player) + 20), 0xFFFFFFFF);
             GL11.glScalef(1.5f, 1.5f, 1);
             GL11.glPopMatrix();
         }
@@ -183,7 +198,7 @@ public class Nametags extends Module {
                 renderOffhand.stackSize = 1;
             }
 
-            this.renderItemStack(renderOffhand, xOffset, -26);
+            renderItemStack(renderOffhand, xOffset, -26);
             xOffset += 16;
 
             if (reversed.getValue()) {
@@ -192,7 +207,7 @@ public class Nametags extends Module {
                     if (armourStack != null && armourStack.getItem() != Items.AIR) {
                         ItemStack renderStack1 = armourStack.copy();
 
-                        this.renderItemStack(armourStack, xOffset, -26);
+                        renderItemStack(armourStack, xOffset, -26);
                         xOffset += 16;
                     }
                 }
@@ -202,18 +217,18 @@ public class Nametags extends Module {
                     if (armourStack != null && armourStack.getItem() != Items.AIR) {
                         ItemStack renderStack1 = armourStack.copy();
 
-                        this.renderItemStack(armourStack, xOffset, -26);
+                        renderItemStack(armourStack, xOffset, -26);
                         xOffset += 16;
                     }
                 }
             }
 
-            this.renderItemStack(renderMainHand, xOffset, -26);
+            renderItemStack(renderMainHand, xOffset, -26);
 
             GlStateManager.popMatrix();
         }
 
-        mc.fontRenderer.drawStringWithShadow(displayTag, -width, -(mc.fontRenderer.FONT_HEIGHT - 1), this.getDisplayColor(player));
+        renderer.drawStringWithShadow(displayTag, -width, -(renderer.getFontHeight() - 1), getDisplayColor(player));
 
         camera.posX = originalPositionX;
         camera.posY = originalPositionY;
@@ -227,7 +242,7 @@ public class Nametags extends Module {
 
     private int getDisplayColor(EntityPlayer player) {
         int displaycolor = ColorHolder.toHex(NCred.getValue(), NCgreen.getValue(), NCblue.getValue());
-        if (Friends.isFriend(player.getName())) {
+        if (OyVey.friendManager.isFriend(player) ) {
             return ColorHolder.toHex(FCred.getValue(), FCgreen.getValue(), FCblue.getValue());
         } else if (player.isInvisible() && invisibles.getValue()) {
             displaycolor = ColorHolder.toHex(ICred.getValue(), ICgreen.getValue(), ICblue.getValue());
@@ -239,7 +254,7 @@ public class Nametags extends Module {
 
     private int getOutlineColor(EntityPlayer player) {
         int outlinecolor = ColorHolder.toHex(Ored.getValue(), Ogreen.getValue(), Oblue.getValue());
-        if (Friends.isFriend(player.getName())) {
+        if (OyVey.friendManager.isFriend(player)) {
             outlinecolor = ColorHolder.toHex(FOred.getValue(), FOgreen.getValue(), FOblue.getValue());
         } else if (player.isInvisible() && invisibles.getValue()) {
             outlinecolor = ColorHolder.toHex(IOred.getValue(), IOgreen.getValue(), IOblue.getValue());
@@ -282,17 +297,17 @@ public class Nametags extends Module {
         int yCount = y;
 
         if (stack.getItem() == Items.GOLDEN_APPLE && stack.hasEffect()) {
-            mc.fontRenderer.drawStringWithShadow("god", x * 2, enchantmentY, 0xFFc34d41);
+            renderer.drawStringWithShadow("god", x * 2, enchantmentY, 0xFFc34d41);
             enchantmentY -= 8;
         }
 
         NBTTagList enchants = stack.getEnchantmentTagList();
-        if(enchants.tagCount() > 2 && max.getValue()) {
-            if(maxText.getValue()) {
-                mc.fontRenderer.drawStringWithShadow("",(float)(x * 2), (float)enchantmentY, 0xFFc34d41);
+        if (enchants.tagCount() > 2 && max.getValue()) {
+            if (maxText.getValue()) {
+                renderer.drawStringWithShadow("",(float)(x * 2), (float)enchantmentY, ColorHolder.toHex(Mred.getValue(), Mgreen.getValue(), Mblue.getValue()));
                 enchantmentY -= 8;
             } else {
-                mc.fontRenderer.drawStringWithShadow("max", (float) (x * 2), (float) enchantmentY, 0xFFc34d41);
+                renderer.drawStringWithShadow("max", (float) (x * 2), (float) enchantmentY, ColorHolder.toHex(Mred.getValue(), Mgreen.getValue(), Mblue.getValue()));
                 enchantmentY -= 8;
             }
         } else {
@@ -306,23 +321,23 @@ public class Nametags extends Module {
                             + enc.getTranslatedName(level).substring(11).substring(0, 1).toLowerCase()
                             : enc.getTranslatedName(level).substring(0, 1).toLowerCase();
                     encName = encName + level;
-                    mc.fontRenderer.drawStringWithShadow(encName, x * 2, enchantmentY, -1);
+                    renderer.drawStringWithShadow(encName, x * 2, enchantmentY, -1);
                     enchantmentY -= 8;
                 }
             }
         }
 
-        if(DamageUtil.hasDurability(stack)) {
+        if (DamageUtil.hasDurability(stack)) {
             int percent = DamageUtil.getRoundedDamage(stack);
             String color;
-            if(percent >= 60) {
+            if (percent >= 60) {
                 color = TextUtil.GREEN;
-            } else if(percent >= 25) {
+            } else if (percent >= 25) {
                 color = TextUtil.YELLOW;
             } else {
                 color = TextUtil.RED;
             }
-            mc.fontRenderer.drawStringWithShadow(color + percent + "%", x * 2, enchantmentY, 0xFFFFFFFF);
+            renderer.drawStringWithShadow(color + percent + "%", x * 2, enchantmentY, 0xFFFFFFFF);
         }
     }
 
@@ -345,7 +360,7 @@ public class Nametags extends Module {
             if (encY > enchantmentY) enchantmentY = encY;
         }
         ItemStack renderMainHand = player.getHeldItemMainhand().copy();
-        if(renderMainHand.hasEffect()) {
+        if (renderMainHand.hasEffect()) {
             float encY = 0;
             NBTTagList enchants = renderMainHand.getEnchantmentTagList();
             for (int index = 0; index < enchants.tagCount(); ++index) {
@@ -359,7 +374,7 @@ public class Nametags extends Module {
             if (encY > enchantmentY) enchantmentY = encY;
         }
         ItemStack renderOffHand = player.getHeldItemOffhand().copy();
-        if(renderOffHand.hasEffect()) {
+        if (renderOffHand.hasEffect()) {
             float encY = 0;
             NBTTagList enchants = renderOffHand.getEnchantmentTagList();
             for (int index = 0; index < enchants.tagCount(); ++index) {
@@ -377,7 +392,7 @@ public class Nametags extends Module {
 
     private String getDisplayTag(EntityPlayer player) {
         String name = player.getDisplayName().getFormattedText();
-        if(name.contains(mc.getSession().getUsername())) {
+        if (name.contains(mc.getSession().getUsername())) {
             name = "You";
         }
 
@@ -385,7 +400,7 @@ public class Nametags extends Module {
             return name;
         }
 
-        float health = player.getHealth();
+        float health = EntityUtil.getHealth(player);
         String color;
 
         if (health > 18) {
@@ -403,7 +418,7 @@ public class Nametags extends Module {
         }
 
         String pingStr = "";
-        if(ping.getValue()) {
+        if (ping.getValue()) {
             try {
                 final int responseTime = Objects.requireNonNull(mc.getConnection()).getPlayerInfo(player.getUniqueID()).getResponseTime();
                 pingStr += responseTime + "ms ";
@@ -411,22 +426,22 @@ public class Nametags extends Module {
         }
 
         String idString = "";
-        if(entityID.getValue()) {
+        if (entityID.getValue()) {
             idString += "ID: " + player.getEntityId() + " ";
         }
 
         String gameModeStr = "";
-        if(gamemode.getValue()) {
-            if(player.isCreative()) {
+        if (gamemode.getValue()) {
+            if (player.isCreative()) {
                 gameModeStr += "[C] ";
-            } else if(player.isSpectator() || player.isInvisible()) {
+            } else if (player.isSpectator() || player.isInvisible()) {
                 gameModeStr += "[I] ";
             } else {
                 gameModeStr += "[S] ";
             }
         }
 
-        if(Math.floor(health) == health) {
+        if (Math.floor(health) == health) {
             name = name + color + " " + (health > 0 ? (int) Math.floor(health) : "dead");
         } else {
             name = name + color + " " + (health > 0 ? (int) health : "dead");
@@ -438,104 +453,55 @@ public class Nametags extends Module {
         return (previous + (current - previous) * delta);
     }
 
-    // dont delete my fucking method again you mutant
-    public static void drawBorderedRectReliant(final float x, final float y, final float x1, final float y1, final float lineWidth, final int inside, final int border) {
-        enableGL2D();
-        drawRect(x, y, x1, y1, inside);
-        glColor(border);
-        GL11.glEnable(3042);
-        GL11.glDisable(3553);
-        GL11.glBlendFunc(770, 771);
-        GL11.glLineWidth(lineWidth);
-        GL11.glBegin(3);
-        GL11.glVertex2f(x, y);
-        GL11.glVertex2f(x, y1);
-        GL11.glVertex2f(x1, y1);
-        GL11.glVertex2f(x1, y);
-        GL11.glVertex2f(x, y);
-        GL11.glEnd();
-        GL11.glEnable(3553);
-        GL11.glDisable(3042);
-        disableGL2D();
+    public void drawOutlineRect(float x, float y, float w, float h, int color) {
+        float alpha = (float)(color >> 24 & 0xFF) / 255.0f;
+        float red = (float)(color >> 16 & 0xFF) / 255.0f;
+        float green = (float)(color >> 8 & 0xFF) / 255.0f;
+        float blue = (float)(color & 0xFF) / 255.0f;
+        Tessellator tessellator = Tessellator.getInstance();
+        BufferBuilder bufferbuilder = tessellator.getBuffer();
+        GlStateManager.enableBlend();
+        GlStateManager.disableTexture2D();
+        GlStateManager.glLineWidth((float)this.Owidth.getValue().floatValue());
+        GlStateManager.tryBlendFuncSeparate((int)770, (int)771, (int)1, (int)0);
+        bufferbuilder.begin(2, DefaultVertexFormats.POSITION_COLOR);
+        bufferbuilder.pos((double)x, (double)h, 0.0).color(red, green, blue, alpha).endVertex();
+        bufferbuilder.pos((double)w, (double)h, 0.0).color(red, green, blue, alpha).endVertex();
+        bufferbuilder.pos((double)w, (double)y, 0.0).color(red, green, blue, alpha).endVertex();
+        bufferbuilder.pos((double)x, (double)y, 0.0).color(red, green, blue, alpha).endVertex();
+        tessellator.draw();
+        GlStateManager.enableTexture2D();
+        GlStateManager.disableBlend();
     }
 
-    // dont delete my fucking method again you mutant
-    public static void drawRect(final Rectangle rectangle, final int color) {
-        drawRect((float)rectangle.x, (float)rectangle.y, (float)(rectangle.x + rectangle.width), (float)(rectangle.y + rectangle.height), color);
-    }
-
-    // dont delete my fucking method again you mutant
-    public static void drawRect(final float x, final float y, final float x1, final float y1, final int color) {
-        enableGL2D();
-        glColor(color);
-        drawRect(x, y, x1, y1);
-        disableGL2D();
-    }
-
-    // dont delete my fucking method again you mutant
-    public static void drawRect(final float x, final float y, final float x1, final float y1, final float r, final float g, final float b, final float a) {
-        enableGL2D();
-        GL11.glColor4f(r, g, b, a);
-        drawRect(x, y, x1, y1);
-        disableGL2D();
-    }
-
-    // dont delete my fucking method again you mutant
-    public static void drawRect(final float x, final float y, final float x1, final float y1) {
-        GL11.glBegin(7);
-        GL11.glVertex2f(x, y1);
-        GL11.glVertex2f(x1, y1);
-        GL11.glVertex2f(x1, y);
-        GL11.glVertex2f(x, y);
-        GL11.glEnd();
-    }
-
-    // dont delete my fucking method again you mutant
-    public static void enableGL2D() {
-        GL11.glDisable(2929);
-        GL11.glEnable(3042);
-        GL11.glDisable(3553);
-        GL11.glBlendFunc(770, 771);
-        GL11.glDepthMask(true);
-        GL11.glEnable(2848);
-        GL11.glHint(3154, 4354);
-        GL11.glHint(3155, 4354);
-    }
-
-    // dont delete my fucking method again you mutant
-    public static void disableGL2D() {
-        GL11.glEnable(3553);
-        GL11.glDisable(3042);
-        GL11.glEnable(2929);
-        GL11.glDisable(2848);
-        GL11.glHint(3154, 4352);
-        GL11.glHint(3155, 4352);
-    }
-
-    // dont delete my fucking method again you mutant
-    public static void glColor(final Color color) {
-        GL11.glColor4f(color.getRed() / 255.0f, color.getGreen() / 255.0f, color.getBlue() / 255.0f, color.getAlpha() / 255.0f);
-    }
-
-    // dont delete my fucking method again you mutant
-    public static void glColor(final int hex) {
-        final float alpha = (hex >> 24 & 0xFF) / 255.0f;
-        final float red = (hex >> 16 & 0xFF) / 255.0f;
-        final float green = (hex >> 8 & 0xFF) / 255.0f;
-        final float blue = (hex & 0xFF) / 255.0f;
-        GL11.glColor4f(red, green, blue, alpha);
-    }
-
-    // dont delete my fucking method again you mutant
-    public static void glColor(final float alpha, final int redRGB, final int greenRGB, final int blueRGB) {
-        final float red = 0.003921569f * redRGB;
-        final float green = 0.003921569f * greenRGB;
-        final float blue = 0.003921569f * blueRGB;
-        GL11.glColor4f(red, green, blue, alpha);
+    public void drawRect(float x, float y, float w, float h, int color) {
+        float alpha = (float)(color >> 24 & 0xFF) / 255.0f;
+        float red = (float)(color >> 16 & 0xFF) / 255.0f;
+        float green = (float)(color >> 8 & 0xFF) / 255.0f;
+        float blue = (float)(color & 0xFF) / 255.0f;
+        Tessellator tessellator = Tessellator.getInstance();
+        BufferBuilder bufferbuilder = tessellator.getBuffer();
+        GlStateManager.enableBlend();
+        GlStateManager.disableTexture2D();
+        GlStateManager.glLineWidth((float)this.Owidth.getValue().floatValue());
+        GlStateManager.tryBlendFuncSeparate((int)770, (int)771, (int)1, (int)0);
+        bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        bufferbuilder.pos((double)x, (double)h, 0.0).color(red, green, blue, alpha).endVertex();
+        bufferbuilder.pos((double)w, (double)h, 0.0).color(red, green, blue, alpha).endVertex();
+        bufferbuilder.pos((double)w, (double)y, 0.0).color(red, green, blue, alpha).endVertex();
+        bufferbuilder.pos((double)x, (double)y, 0.0).color(red, green, blue, alpha).endVertex();
+        tessellator.draw();
+        GlStateManager.enableTexture2D();
+        GlStateManager.disableBlend();
     }
 
     @Override
-    public void onTick() {
+    public void onUpdate() {
+        if (outline.getValue().equals(false)) {
+            rect.setValue(true);
+        } else if (rect.getValue().equals(false)) {
+            outline.setValue(true);
+        }
         if (ORainbow.getValue()) {
             OutlineRainbow();
         }
@@ -612,6 +578,18 @@ public class Nametags extends Module {
         SCblue.setValue(color_rgb_o & 0xFF);
     }
 
+    public void InvisibleRainbow() {
+        float[] tick_color = {
+                (System.currentTimeMillis() % (360 * 32)) / (360f * 32)
+        };
+
+        int color_rgb_o = Color.HSBtoRGB(tick_color[0], 0.8f, 0.8f);
+
+        ICred.setValue((color_rgb_o >> 16) & 0xFF);
+        ICgreen.setValue((color_rgb_o >> 8) & 0xFF);
+        ICblue.setValue(color_rgb_o & 0xFF);
+    }
+
     public void InvisibleOutlineRainbow() {
         float[] tick_color = {
                 (System.currentTimeMillis() % (360 * 32)) / (360f * 32)
@@ -646,17 +624,5 @@ public class Nametags extends Module {
         SOred.setValue((color_rgb_o >> 16) & 0xFF);
         SOgreen.setValue((color_rgb_o >> 8) & 0xFF);
         SOblue.setValue(color_rgb_o & 0xFF);
-    }
-
-    public void InvisibleRainbow() {
-        float[] tick_color = {
-                (System.currentTimeMillis() % (360 * 32)) / (360f * 32)
-        };
-
-        int color_rgb_o = Color.HSBtoRGB(tick_color[0], 0.8f, 0.8f);
-
-        ICred.setValue((color_rgb_o >> 16) & 0xFF);
-        ICgreen.setValue((color_rgb_o >> 8) & 0xFF);
-        ICblue.setValue(color_rgb_o & 0xFF);
     }
 }

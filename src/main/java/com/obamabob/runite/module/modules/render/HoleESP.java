@@ -1,316 +1,95 @@
-package com.obamabob.runite.module.modules.render;
+package me.alpha432.oyvey.features.modules.render;
 
-import java.awt.Color;
-
-import com.mojang.realmsclient.gui.ChatFormatting;
-import com.obamabob.runite.event.events.EventRender;
-import com.obamabob.runite.settings.Setting;
-import com.obamabob.runite.util.*;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import com.obamabob.runite.module.Module;
-import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.culling.Frustum;
-import net.minecraft.client.renderer.culling.ICamera;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.Vec3d;
+import me.alpha432.oyvey.event.events.Render3DEvent;
+import me.alpha432.oyvey.features.modules.Module;
+import me.alpha432.oyvey.features.modules.client.ClickGui;
+import me.alpha432.oyvey.features.setting.Setting;
+import me.alpha432.oyvey.util.BlockUtil;
+import me.alpha432.oyvey.util.ColorUtil;
+import me.alpha432.oyvey.util.RenderUtil;
 import net.minecraft.init.Blocks;
-
-import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.util.math.BlockPos;
-import org.lwjgl.input.Keyboard;
+import net.minecraft.util.math.Vec3i;
+
+import java.awt.*;
+
+/**
+ * @Author BrownZombie
+ * @Date 2/10/21
+ * @Version 1.0.5
+ */
 
 public class HoleESP extends Module {
-    private final BlockPos[] surroundOffset;
-    private final Setting<Boolean> frustum = register(new Setting<>("Frustum", this, true));
-    private final Setting<Boolean> hideOwn = register(new Setting<>("HideOwn", this, false));
-    private final Setting<Boolean> offset = register(new Setting<>("Offset Lower", this, false));
-    private final Setting<Boolean> future = register(new Setting<>("Future Mode", this, true));
-    private final Setting<Float> renderDistance = register(new Setting<>("RenderDistance", this, 8f, 1f, 32f));
-    private final Setting<Boolean> max = register(new Setting<>("Maximum Holes", this, false));
-    private final Setting<Integer> maxHoles = register(new Setting<>("Maximum Num", this, 8, 1, 100));
-    private final Setting<String> holeMode = register(new Setting<>("Hole Mode", this, "Both", new String[]{"Bedrock", "Obsidian", "Both"}));
-    private final Setting<String> renderMode = register(new Setting<>("RenderMode", this, "Solid", new ArrayList<>(
-            Arrays.asList("Solid", "Flat")
-    )));
-    private final Setting<String> drawMode = register(new Setting<>("DrawMode", this, "Solid", EnumUtil.enumConverter(Modes.class)));
-    private final Setting<Float> cuboid = register(new Setting<>("Cuboid Height", this, 0.9f, 0f, 1f));
-    private final Setting<Boolean> rainbow = register(new Setting<>("Rainbow", this, false));
-    private final Setting<Integer> obiRed = register(new Setting<>("ObiRed", this, 255, 0, 255));
-    private final Setting<Integer> obiGreen = register(new Setting<>("ObiGreen", this, 0, 0, 255));
-    private final Setting<Integer> obiBlue = register(new Setting<>("ObiBlue", this, 0, 0, 255));
-    private final Setting<Integer> brockRed = register(new Setting<>("BrockRed", this, 0, 0, 255));
-    private final Setting<Integer> brockGreen = register(new Setting<>("BrockGreen", this, 255, 0, 255));
-    private final Setting<Integer> brockBlue = register(new Setting<>("BrockBlue", this, 0, 0, 255));
-    private final Setting<Integer> alpha = register(new Setting<>("Alpha", this, 120, 0, 255));
-    private final Setting<Integer> alpha2 = register(new Setting<>("Outline Alpha", this, 255, 0, 255));
-    private ConcurrentHashMap<BlockPos, Pair<Boolean, Boolean>> safeHoles;
+    public Setting<Boolean> renderOwn = register(new Setting<Boolean>("RenderOwn", true));
+    public Setting<Boolean> fov = register(new Setting<Boolean>("InFov", true));
+    public Setting<Boolean> rainbow = register(new Setting<Boolean>("Rainbow", false));
+    private final Setting<Integer> range = register(new Setting<Integer>("RangeX", 0, 0, 10));
+    private final Setting<Integer> rangeY = register(new Setting<Integer>("RangeY", 0, 0, 10));
+    public Setting<Boolean> box = register(new Setting<Boolean>("Box", true));
+    public Setting<Boolean> gradientBox = register(new Setting<Object>("Gradient", Boolean.valueOf(false), v -> box.getValue()));
+    public Setting<Boolean> invertGradientBox = register(new Setting<Object>("ReverseGradient", Boolean.valueOf(false), v -> gradientBox.getValue()));
+    public Setting<Boolean> outline = register(new Setting<Boolean>("Outline", true));
+    public Setting<Boolean> gradientOutline = register(new Setting<Object>("GradientOutline", Boolean.valueOf(false), v -> outline.getValue()));
+    public Setting<Boolean> invertGradientOutline = register(new Setting<Object>("ReverseOutline", Boolean.valueOf(false), v -> gradientOutline.getValue()));
+    public Setting<Double> height = register(new Setting<Double>("Height", 0.0, -2.0, 2.0));
+    private Setting<Integer> red = register(new Setting<Integer>("Red", 0, 0, 255));
+    private Setting<Integer> green = register(new Setting<Integer>("Green", 255, 0, 255));
+    private Setting<Integer> blue = register(new Setting<Integer>("Blue", 0, 0, 255));
+    private Setting<Integer> alpha = register(new Setting<Integer>("Alpha", 255, 0, 255));
+    private Setting<Integer> boxAlpha = register(new Setting<Object>("BoxAlpha", Integer.valueOf(125), Integer.valueOf(0), Integer.valueOf(255), v -> box.getValue()));
+    private Setting<Float> lineWidth = register(new Setting<Object>("LineWidth", Float.valueOf(1.0f), Float.valueOf(0.1f), Float.valueOf(5.0f), v -> outline.getValue()));
+    public Setting<Boolean> safeColor = register(new Setting<Boolean>("BedrockColor", false));
+    private Setting<Integer> safeRed = register(new Setting<Object>("BedrockRed", Integer.valueOf(0), Integer.valueOf(0), Integer.valueOf(255), v -> safeColor.getValue()));
+    private Setting<Integer> safeGreen = register(new Setting<Object>("BedrockGreen", Integer.valueOf(255), Integer.valueOf(0), Integer.valueOf(255), v -> safeColor.getValue()));
+    private Setting<Integer> safeBlue = register(new Setting<Object>("BedrockBlue", Integer.valueOf(0), Integer.valueOf(0), Integer.valueOf(255), v -> safeColor.getValue()));
+    private Setting<Integer> safeAlpha = register(new Setting<Object>("BedrockAlpha", Integer.valueOf(255), Integer.valueOf(0), Integer.valueOf(255), v -> safeColor.getValue()));
+    public Setting<Boolean> customOutline = register(new Setting<Object>("CustomLine", Boolean.valueOf(false), v -> outline.getValue()));
+    private Setting<Integer> cRed = register(new Setting<Object>("OL-Red", Integer.valueOf(0), Integer.valueOf(0), Integer.valueOf(255), v -> customOutline.getValue() != false && outline.getValue() != false));
+    private Setting<Integer> cGreen = register(new Setting<Object>("OL-Green", Integer.valueOf(0), Integer.valueOf(0), Integer.valueOf(255), v -> customOutline.getValue() != false && outline.getValue() != false));
+    private Setting<Integer> cBlue = register(new Setting<Object>("OL-Blue", Integer.valueOf(255), Integer.valueOf(0), Integer.valueOf(255), v -> customOutline.getValue() != false && outline.getValue() != false));
+    private Setting<Integer> cAlpha = register(new Setting<Object>("OL-Alpha", Integer.valueOf(255), Integer.valueOf(0), Integer.valueOf(255), v -> customOutline.getValue() != false && outline.getValue() != false));
+    private Setting<Integer> safecRed = register(new Setting<Object>("OL-SafeRed", Integer.valueOf(0), Integer.valueOf(0), Integer.valueOf(255), v -> customOutline.getValue() != false && outline.getValue() != false && safeColor.getValue() != false));
+    private Setting<Integer> safecGreen = register(new Setting<Object>("OL-SafeGreen", Integer.valueOf(255), Integer.valueOf(0), Integer.valueOf(255), v -> customOutline.getValue() != false && outline.getValue() != false && safeColor.getValue() != false));
+    private Setting<Integer> safecBlue = register(new Setting<Object>("OL-SafeBlue", Integer.valueOf(0), Integer.valueOf(0), Integer.valueOf(255), v -> customOutline.getValue() != false && outline.getValue() != false && safeColor.getValue() != false));
+    private Setting<Integer> safecAlpha = register(new Setting<Object>("OL-SafeAlpha", Integer.valueOf(255), Integer.valueOf(0), Integer.valueOf(255), v -> customOutline.getValue() != false && outline.getValue() != false && safeColor.getValue() != false));
+    private static HoleESP INSTANCE = new HoleESP();
+    private int currentAlpha = 0;
 
     public HoleESP() {
-        super("HoleESP", Category.RENDER);
-        this.surroundOffset = new BlockPos[] { new BlockPos(0, -1, 0), new BlockPos(0, 0, -1), new BlockPos(1, 0, 0), new BlockPos(0, 0, 1), new BlockPos(-1, 0, 0) };
+        super("HoleESP", "Shows safe spots.", Module.Category.RENDER, false, false, false);
+        setInstance();
     }
 
-
-    public enum Modes {
-        SOLID, OUTLINE, FULL, CUBOID, INDICATOR
+    private void setInstance() {
+        INSTANCE = this;
     }
-    int holes;
 
-    ICamera camera = new Frustum();
-
-    @Override
-    public void onTick() {
-        if (mc.world == null) return;
-        double d3 = mc.player.lastTickPosX + (mc.player.posX - mc.player.lastTickPosX) * (double)mc.getRenderPartialTicks();
-        double d4 = mc.player.lastTickPosY + (mc.player.posY - mc.player.lastTickPosY) * (double)mc.getRenderPartialTicks();
-        double d5 = mc.player.lastTickPosZ + (mc.player.posZ - mc.player.lastTickPosZ) * (double)mc.getRenderPartialTicks();
-
-        camera.setPosition(d3,  d4,  d5);
-        if (this.safeHoles == null) {
-            this.safeHoles = new ConcurrentHashMap<>();
+    public static HoleESP getInstance() {
+        if (INSTANCE == null) {
+            INSTANCE = new HoleESP();
         }
-        else {
-            this.safeHoles.clear();
-        }
-        final int range = (int)Math.ceil(this.renderDistance.getValue());
-        final List<BlockPos> blockPosList = BlockInteractionHelper.getSphere(new BlockPos(Math.floor(mc.player.posX), Math.floor(mc.player.posY), Math.floor(mc.player.posZ)), (float)range, range, false, true, 0);
-        holes = 0;
-        for (final BlockPos pos : blockPosList) {
-            if (!mc.world.getBlockState(pos).getBlock().equals(Blocks.AIR)) {
-                continue;
-            }
-            if (!mc.world.getBlockState(pos.add(0, 1, 0)).getBlock().equals(Blocks.AIR)) {
-                continue;
-            }
-            if (!mc.world.getBlockState(pos.add(0, 2, 0)).getBlock().equals(Blocks.AIR)) {
-                continue;
-            }
-            if (this.hideOwn.getValue() && pos.equals(new BlockPos(mc.player.posX, mc.player.posY, mc.player.posZ))) {
-                continue;
-            }
-            if (frustum.getValue() && !camera.isBoundingBoxInFrustum(mc.world.getBlockState(pos).getSelectedBoundingBox(mc.world, pos))) {
-                continue;
-            }
-            boolean isSafe = true;
-            boolean isBedrock = true;
-            boolean hasBedrock = false;
-            for (final BlockPos offset : this.surroundOffset) {
-                final Block block = mc.world.getBlockState(pos.add(offset)).getBlock();
-                if (block != Blocks.BEDROCK) {
-                    isBedrock = false;
-                }
-                if (block == Blocks.BEDROCK) {
-                    hasBedrock = true;
-                }
-                if (block != Blocks.BEDROCK && block != Blocks.OBSIDIAN && block != Blocks.ENDER_CHEST && block != Blocks.ANVIL) {
-                    isSafe = false;
-                    break;
-                }
-            }
-            if (!isSafe) {
-                continue;
-            }
-            if (isBedrock && holeMode.getValue().equalsIgnoreCase("Obsidian")) continue;
-            if (!isBedrock && holeMode.getValue().equalsIgnoreCase("Bedrock")) continue;
-            this.safeHoles.put(pos, new Pair<>(isBedrock, hasBedrock));
-            if (this.max.getValue()) {
-                holes++;
-                if (holes == this.maxHoles.getValue()) {
-                    return;
-                }
-            }
-        }
+        return INSTANCE;
     }
 
     @Override
-    public void onWorldRender(final EventRender event) {
-        if (mc.player == null || this.safeHoles == null) {
-            return;
-        }
-        if (this.safeHoles.isEmpty()) {
-            return;
-        }
-        if (this.drawMode.getValue().equalsIgnoreCase("Solid")) {
-            RuniteTessellator.prepare(7);
-            this.safeHoles.forEach((blockPos, pair) -> {
-                if (this.offset.getValue()) {
-                    blockPos = blockPos.add(0, -1, 0);
-                }
-                if (pair.getKey()) {
-                    this.drawBlock(blockPos, (this.rainbow.getValue() ? RainbowUtil.r : this.brockRed.getValue()), (this.rainbow.getValue() ? RainbowUtil.g : this.brockGreen.getValue()), (this.rainbow.getValue() ? RainbowUtil.b : this.brockBlue.getValue()), pair);
-                } else {
-                    this.drawBlock(blockPos, (this.rainbow.getValue() ? RainbowUtil.r : this.obiRed.getValue()), (this.rainbow.getValue() ? RainbowUtil.g : this.obiGreen.getValue()), (this.rainbow.getValue() ? RainbowUtil.b : this.obiBlue.getValue()), pair);
-                }
-                return;
-            });
-            RuniteTessellator.release();
-        }
-        else if (this.drawMode.getValue().equalsIgnoreCase("Outline")) {
-            this.safeHoles.forEach((blockPos, pair) -> {
-                if (this.offset.getValue()) {
-                    blockPos = blockPos.add(0, -1, 0);
-                }
-                if (renderMode.getValue().equalsIgnoreCase("Solid")) {
-                    if (pair.getKey()) {
-                        this.drawBlockO(blockPos, (this.rainbow.getValue() ? RainbowUtil.r : this.brockRed.getValue()), (this.rainbow.getValue() ? RainbowUtil.g : this.brockGreen.getValue()), (this.rainbow.getValue() ? RainbowUtil.b : this.brockBlue.getValue()), pair);
-                    } else {
-                        this.drawBlockO(blockPos, (this.rainbow.getValue() ? RainbowUtil.r : this.obiRed.getValue()), (this.rainbow.getValue() ? RainbowUtil.g : this.obiGreen.getValue()), (this.rainbow.getValue() ? RainbowUtil.b : this.obiBlue.getValue()), pair);
+    public void onRender3D(Render3DEvent event) {
+        assert (HoleESP.mc.renderViewEntity != null);
+        Vec3i playerPos = new Vec3i(HoleESP.mc.renderViewEntity.posX, HoleESP.mc.renderViewEntity.posY, HoleESP.mc.renderViewEntity.posZ);
+        for (int x = playerPos.getX() - range.getValue(); x < playerPos.getX() + range.getValue(); ++x) {
+            for (int z = playerPos.getZ() - range.getValue(); z < playerPos.getZ() + range.getValue(); ++z) {
+                for (int y = playerPos.getY() + rangeY.getValue(); y > playerPos.getY() - rangeY.getValue(); --y) {
+                    BlockPos pos = new BlockPos(x, y, z);
+                    if (!HoleESP.mc.world.getBlockState(pos).getBlock().equals(Blocks.AIR) || !HoleESP.mc.world.getBlockState(pos.add(0, 1, 0)).getBlock().equals(Blocks.AIR) || !HoleESP.mc.world.getBlockState(pos.add(0, 2, 0)).getBlock().equals(Blocks.AIR) || pos.equals(new BlockPos(HoleESP.mc.player.posX, HoleESP.mc.player.posY, HoleESP.mc.player.posZ)) && !renderOwn.getValue().booleanValue() || !BlockUtil.isPosInFov(pos).booleanValue() && fov.getValue().booleanValue())
+                        continue;
+                    if (HoleESP.mc.world.getBlockState(pos.north()).getBlock() == Blocks.BEDROCK && HoleESP.mc.world.getBlockState(pos.east()).getBlock() == Blocks.BEDROCK && HoleESP.mc.world.getBlockState(pos.west()).getBlock() == Blocks.BEDROCK && HoleESP.mc.world.getBlockState(pos.south()).getBlock() == Blocks.BEDROCK && HoleESP.mc.world.getBlockState(pos.down()).getBlock() == Blocks.BEDROCK) {
+                        RenderUtil.drawBoxESP(pos, rainbow.getValue() ? ColorUtil.rainbow(ClickGui.getInstance().rainbowHue.getValue()) : new Color(safeRed.getValue(), safeGreen.getValue(), safeBlue.getValue(), safeAlpha.getValue()), customOutline.getValue(), new Color(safecRed.getValue(), safecGreen.getValue(), safecBlue.getValue(), safecAlpha.getValue()), lineWidth.getValue().floatValue(), outline.getValue(), box.getValue(), boxAlpha.getValue(), true, height.getValue(), gradientBox.getValue(), gradientOutline.getValue(), invertGradientBox.getValue(), invertGradientOutline.getValue(), currentAlpha);
+                        continue;
                     }
+                    if (!BlockUtil.isBlockUnSafe(HoleESP.mc.world.getBlockState(pos.down()).getBlock()) || !BlockUtil.isBlockUnSafe(HoleESP.mc.world.getBlockState(pos.east()).getBlock()) || !BlockUtil.isBlockUnSafe(HoleESP.mc.world.getBlockState(pos.west()).getBlock()) || !BlockUtil.isBlockUnSafe(HoleESP.mc.world.getBlockState(pos.south()).getBlock()) || !BlockUtil.isBlockUnSafe(HoleESP.mc.world.getBlockState(pos.north()).getBlock()))
+                        continue;
+                    RenderUtil.drawBoxESP(pos, rainbow.getValue() ? ColorUtil.rainbow(ClickGui.getInstance().rainbowHue.getValue()) : new Color(red.getValue(), green.getValue(), blue.getValue(), alpha.getValue()), customOutline.getValue(), new Color(cRed.getValue(), cGreen.getValue(), cBlue.getValue(), cAlpha.getValue()), lineWidth.getValue().floatValue(), outline.getValue(), box.getValue(), boxAlpha.getValue(), true, height.getValue(), gradientBox.getValue(), gradientOutline.getValue(), invertGradientBox.getValue(), invertGradientOutline.getValue(), currentAlpha);
                 }
-                else if (renderMode.getValue().equalsIgnoreCase("Flat")) {
-                    if (pair.getKey()) {
-                        this.drawBlockOF(blockPos, (this.rainbow.getValue() ? RainbowUtil.r : this.brockRed.getValue()), (this.rainbow.getValue() ? RainbowUtil.g : this.brockGreen.getValue()), (this.rainbow.getValue() ? RainbowUtil.b : this.brockBlue.getValue()), pair);
-                    } else {
-                        this.drawBlockOF(blockPos, (this.rainbow.getValue() ? RainbowUtil.r : this.obiRed.getValue()), (this.rainbow.getValue() ? RainbowUtil.g : this.obiGreen.getValue()), (this.rainbow.getValue() ? RainbowUtil.b : this.obiBlue.getValue()), pair);
-                    }
-                }
-            });
-        }
-        else if (this.drawMode.getValue().equalsIgnoreCase("Full")) {
-            this.safeHoles.forEach((blockPos, pair) -> {
-                if (this.offset.getValue()) {
-                    blockPos = blockPos.add(0, -1, 0);
-                }
-                if (renderMode.getValue().equalsIgnoreCase("Solid")) {
-                    if (pair.getKey()) {
-                        RuniteTessellator.prepare(7);
-                        this.drawBlock(blockPos, (this.rainbow.getValue() ? RainbowUtil.r : this.brockRed.getValue()), (this.rainbow.getValue() ? RainbowUtil.g : this.brockGreen.getValue()), (this.rainbow.getValue() ? RainbowUtil.b : this.brockBlue.getValue()), pair);
-                        RuniteTessellator.release();
-                        this.drawBlockO(blockPos, (this.rainbow.getValue() ? RainbowUtil.r : this.brockRed.getValue()), (this.rainbow.getValue() ? RainbowUtil.g : this.brockGreen.getValue()), (this.rainbow.getValue() ? RainbowUtil.b : this.brockBlue.getValue()), pair);
-                    } else {
-                        RuniteTessellator.prepare(7);
-                        this.drawBlock(blockPos, (this.rainbow.getValue() ? RainbowUtil.r : this.obiRed.getValue()), (this.rainbow.getValue() ? RainbowUtil.g : this.obiGreen.getValue()), (this.rainbow.getValue() ? RainbowUtil.b : this.obiBlue.getValue()), pair);
-                        RuniteTessellator.release();
-                        this.drawBlockO(blockPos, (this.rainbow.getValue() ? RainbowUtil.r : this.obiRed.getValue()), (this.rainbow.getValue() ? RainbowUtil.g : this.obiGreen.getValue()), (this.rainbow.getValue() ? RainbowUtil.b : this.obiBlue.getValue()), pair);
-                    }
-                }
-                else if (renderMode.getValue().equalsIgnoreCase("Flat")) {
-                    if (pair.getKey()) {
-                        RuniteTessellator.prepare(7);
-                        this.drawBlock(blockPos, (this.rainbow.getValue() ? RainbowUtil.r : this.brockRed.getValue()), (this.rainbow.getValue() ? RainbowUtil.g : this.brockGreen.getValue()), (this.rainbow.getValue() ? RainbowUtil.b : this.brockBlue.getValue()), pair);
-                        RuniteTessellator.release();
-                        this.drawBlockOF(blockPos, (this.rainbow.getValue() ? RainbowUtil.r : this.brockRed.getValue()), (this.rainbow.getValue() ? RainbowUtil.g : this.brockGreen.getValue()), (this.rainbow.getValue() ? RainbowUtil.b : this.brockBlue.getValue()), pair);
-                    } else {
-                        RuniteTessellator.prepare(7);
-                        this.drawBlock(blockPos, (this.rainbow.getValue() ? RainbowUtil.r : this.obiRed.getValue()), (this.rainbow.getValue() ? RainbowUtil.g : this.obiGreen.getValue()), (this.rainbow.getValue() ? RainbowUtil.b : this.obiBlue.getValue()), pair);
-                        RuniteTessellator.release();
-                        this.drawBlockOF(blockPos, (this.rainbow.getValue() ? RainbowUtil.r : this.obiRed.getValue()), (this.rainbow.getValue() ? RainbowUtil.g : this.obiGreen.getValue()), (this.rainbow.getValue() ? RainbowUtil.b : this.obiBlue.getValue()), pair);
-                    }
-                }
-            });
-        }
-        else if (this.drawMode.getValue().equalsIgnoreCase("Cuboid")) {
-            this.safeHoles.forEach((blockPos, pair) -> {
-                if (this.offset.getValue()) {
-                    blockPos = blockPos.add(0, -1, 0);
-                }
-                if (pair.getKey()) {
-                    this.drawBlockCUB(blockPos, (this.rainbow.getValue() ? RainbowUtil.r : this.brockRed.getValue()), (this.rainbow.getValue() ? RainbowUtil.g : this.brockGreen.getValue()), (this.rainbow.getValue() ? RainbowUtil.b : this.brockBlue.getValue()), pair);
-                } else {
-                    this.drawBlockCUB(blockPos, (this.rainbow.getValue() ? RainbowUtil.r : this.obiRed.getValue()), (this.rainbow.getValue() ? RainbowUtil.g : this.obiGreen.getValue()), (this.rainbow.getValue() ? RainbowUtil.b : this.obiBlue.getValue()), pair);
-                }
-            });
-        }
-        else if (this.drawMode.getValue().equalsIgnoreCase("Indicator")) {
-            this.safeHoles.forEach((blockPos, pair) -> {
-                if (this.offset.getValue()) {
-                    blockPos = blockPos.add(0, -1, 0);
-                }
-                if (pair.getKey()) {
-                    this.drawBlockIndicator(blockPos, (this.rainbow.getValue() ? RainbowUtil.r : this.brockRed.getValue()), (this.rainbow.getValue() ? RainbowUtil.g : this.brockGreen.getValue()), (this.rainbow.getValue() ? RainbowUtil.b : this.brockBlue.getValue()), pair);
-                } else {
-                    this.drawBlockIndicator(blockPos, (this.rainbow.getValue() ? RainbowUtil.r : this.obiRed.getValue()), (this.rainbow.getValue() ? RainbowUtil.g : this.obiGreen.getValue()), (this.rainbow.getValue() ? RainbowUtil.b : this.obiBlue.getValue()), pair);
-                }
-            });
-        }
-    }
-
-    private boolean isIntermediate(final BlockPos pos) {
-        boolean flag = false;
-        boolean oflag = false;
-        for (final BlockPos offset : this.surroundOffset) {
-            final Block block = mc.world.getBlockState(pos.add(offset)).getBlock();
-            if (block == Blocks.BEDROCK) {
-                flag = true;
-            }
-            else if (block == Blocks.OBSIDIAN && block == Blocks.ENDER_CHEST && block == Blocks.ANVIL) {
-                oflag = true;
             }
         }
-        return flag && oflag;
-    }
-
-    private void drawBlock(final BlockPos blockPos, final int r, final int g, final int b, final Pair<Boolean, Boolean> pair) {
-        Color color = new Color(r, g, b, this.alpha.getValue());
-        if (future.getValue() && (!pair.getKey() && pair.getValue())) {
-            color = new Color(255, 255, 0, this.alpha.getValue());
-        }
-        int mask = 1;
-        if (this.renderMode.getValue().equalsIgnoreCase("Solid")) {
-            mask = 63;
-        }
-        RuniteTessellator.drawBox(blockPos, color.getRGB(), mask);
-    }
-    private void drawBlockO(final BlockPos blockPos, final int r, final int g, final int b, final Pair<Boolean, Boolean> pair) {
-        final int red = (future.getValue() && (!pair.getKey() && pair.getValue()) ? 255 : r);
-        final int green = (future.getValue() && (!pair.getKey() && pair.getValue()) ? 255 : g);
-        final int blue = (future.getValue() && (!pair.getKey() && pair.getValue()) ? 0 : b);
-        final IBlockState iBlockState2 = mc.world.getBlockState(blockPos);
-        final Vec3d interp2 = MathUtil.interpolateEntity(mc.player, mc.getRenderPartialTicks());
-        RuniteTessellator.drawBoundingBox(iBlockState2.getSelectedBoundingBox(mc.world, blockPos).grow(0.0020000000949949026D).offset(-interp2.x, -interp2.y, -interp2.z), 1.5f, red, green, blue, alpha2.getValue());
-    }
-    private void drawBlockCUB(final BlockPos blockPos, final int r, final int g, final int b, final Pair<Boolean, Boolean> pair) {
-        final int red = (future.getValue() && (!pair.getKey() && pair.getValue()) ? 255 : r);
-        final int green = (future.getValue() && (!pair.getKey() && pair.getValue()) ? 255 : g);
-        final int blue = (future.getValue() && (!pair.getKey() && pair.getValue()) ? 0 : b);
-        final IBlockState iBlockState2 = mc.world.getBlockState(blockPos);
-        final Vec3d interp2 = MathUtil.interpolateEntity(mc.player, mc.getRenderPartialTicks());
-        AxisAlignedBB aabb = iBlockState2.getSelectedBoundingBox(mc.world, blockPos);
-        aabb = aabb.setMaxY(aabb.maxY - 1 * cuboid.getValue()).grow(0.0020000000949949026D).offset(-interp2.x, -interp2.y, -interp2.z);
-        RuniteTessellator.drawFullBox2(aabb, blockPos, 1.5f, new Color(red, green, blue, alpha.getValue()).getRGB(), alpha2.getValue());
-    }
-
-    private void drawBlockIndicator(final BlockPos blockPos, final int r, final int g, final int b, final Pair<Boolean, Boolean> pair) {
-        final int red = (future.getValue() && (!pair.getKey() && pair.getValue()) ? 255 : r);
-        final int green = (future.getValue() && (!pair.getKey() && pair.getValue()) ? 255 : g);
-        final int blue = (future.getValue() && (!pair.getKey() && pair.getValue()) ? 0 : b);
-        final IBlockState iBlockState2 = mc.world.getBlockState(blockPos);
-        final Vec3d interp2 = MathUtil.interpolateEntity(mc.player, mc.getRenderPartialTicks());
-        AxisAlignedBB aabb = iBlockState2.getSelectedBoundingBox(mc.world, blockPos);
-        aabb = aabb.setMaxY(aabb.maxY + (mc.player.getDistanceSq(blockPos) < 10 ? 0 : 3)).grow(0.0020000000949949026D).offset(-interp2.x, -interp2.y, -interp2.z);
-        GlStateManager.enableCull();
-        RuniteTessellator.drawIndicator(aabb, new Color(red, green, blue, alpha.getValue()).getRGB(), 63);
-    }
-
-    private void drawBlockOCUB(final BlockPos blockPos, final int r, final int g, final int b, final Pair<Boolean, Boolean> pair) {
-        final int red = (future.getValue() && (!pair.getKey() && pair.getValue()) ? 255 : r);
-        final int green = (future.getValue() && (!pair.getKey() && pair.getValue()) ? 255 : g);
-        final int blue = (future.getValue() && (!pair.getKey() && pair.getValue()) ? 0 : b);
-        final IBlockState iBlockState2 = mc.world.getBlockState(blockPos);
-        final Vec3d interp2 = MathUtil.interpolateEntity(mc.player, mc.getRenderPartialTicks());
-        AxisAlignedBB aabb = iBlockState2.getSelectedBoundingBox(mc.world, blockPos);
-        aabb = aabb.setMaxY(aabb.maxY - 1 * cuboid.getValue()).grow(0.0020000000949949026D).offset(-interp2.x, -interp2.y, -interp2.z);
-        RuniteTessellator.drawBoundingBox(aabb, 1.5f, red, green, blue, alpha2.getValue());
-    }
-    private void drawBlockOF(final BlockPos blockPos, final int r, final int g, final int b, final Pair<Boolean, Boolean> pair) {
-        final int red = (future.getValue() && (!pair.getKey() && pair.getValue()) ? 255 : r);
-        final int green = (future.getValue() && (!pair.getKey() && pair.getValue()) ? 255 : g);
-        final int blue = (future.getValue() && (!pair.getKey() && pair.getValue()) ? 0 : b);
-        final IBlockState iBlockState = mc.world.getBlockState(blockPos);
-        final Vec3d interp = MathUtil.interpolateEntity(mc.player, mc.getRenderPartialTicks());
-        RuniteTessellator.drawBoundingBoxFace(iBlockState.getSelectedBoundingBox(mc.world, blockPos).grow(0.0020000000949949026D).offset(-interp.x, -interp.y, -interp.z), 1.5f, red, green, blue, alpha2.getValue());
-    }
-
-    @Override
-    public String getHudInfo() {
-        int holes = 0;
-        if (safeHoles != null) holes = safeHoles.size();
-        return "[" + ChatFormatting.WHITE + holes + ChatFormatting.RESET + "]";
     }
 }

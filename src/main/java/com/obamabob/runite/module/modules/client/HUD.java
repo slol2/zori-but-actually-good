@@ -15,7 +15,8 @@ import java.text.DecimalFormat;
 import java.util.Calendar;
 
 public class HUD extends Module {
-    public HUD() {super("HUD", Category.CLIENT);MinecraftForge.EVENT_BUS.register(this);}
+    public HUD() {super("HUD", Category.CLIENT);
+        MinecraftForge.EVENT_BUS.register(this);}
 
     Setting<Boolean> watermark = register(new Setting<>("Watermark", this, true));
     Setting<Boolean> greeter = register(new Setting<>("Greeter",this, true));
