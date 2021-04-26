@@ -49,6 +49,8 @@ repositories {
 
 dependencies {
     compile group: "com.googlecode.json-simple", name: "json-simple", version: "1.1.1"
+    compile group: 'com.squareup.okhttp', name: 'okhttp', version: '2.7.5'
+    compile group: 'com.squareup.okio', name: 'okio', version: '1.6.0'
     compile('org.spongepowered:mixin:0.7.11-SNAPSHOT') {
         exclude module: 'launchwrapper'
         exclude module: 'guava'
@@ -86,6 +88,8 @@ shadowJar {
         include(dependency('club.minnced:java-discord-rpc'))
         include(dependency('com.googlecode.json-simple:json-simple:1.1.1'))
         include(dependency('org.spongepowered:mixin'))
+        include(dependency("com.squareup.okhttp:okhttp"))
+        include(dependency("com.squareup.okio:okio"))
     }
     exclude 'dummyThing'
     exclude 'LICENSE.txt'

