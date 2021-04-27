@@ -5,17 +5,18 @@ import me.alpha432.oyvey.features.command.Command;
 import me.alpha432.oyvey.features.modules.Module;
 import me.alpha432.oyvey.features.setting.Setting;
 import net.minecraft.client.entity.EntityOtherPlayerMP;
-import java.util.UUID;
 import net.minecraft.world.GameType;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.network.FMLNetworkEvent;
+
+import java.util.UUID;
 
 public class FakePlayer extends Module {
     public FakePlayer() {
         super("FakePlayer", "Spawns a literal fake player", Module.Category.PLAYER, false, false, false);
     }
 
-    public Setting<String> fakename = register(new Setting("Name", "popbob"));
+    public Setting<String> fakename = register(new Setting("Name", "Skitttyy"));
 
     private EntityOtherPlayerMP clonedPlayer;
 
@@ -26,7 +27,7 @@ public class FakePlayer extends Module {
             return;
         }
 
-        clonedPlayer = new EntityOtherPlayerMP(mc.world, new GameProfile(UUID.fromString("0f75a81d-70e5-43c5-b892-f33c524284f2"), fakename.getValueAsString()));
+        clonedPlayer = new EntityOtherPlayerMP(mc.world, new GameProfile(UUID.fromString("48efc40f-56bf-42c3-aa24-28e0c053f325"), fakename.getValueAsString()));
         clonedPlayer.copyLocationAndAnglesFrom(mc.player);
         clonedPlayer.rotationYawHead = mc.player.rotationYawHead;
         clonedPlayer.rotationYaw = mc.player.rotationYaw;
