@@ -40,6 +40,7 @@ public class HUD extends Module {
     private final Setting<Boolean> direction = register(new Setting("Direction", Boolean.valueOf(false), "The Direction you are facing."));
     private final Setting<Boolean> armor = register(new Setting("Armor", Boolean.valueOf(false), "ArmorHUD"));
     private final Setting<Boolean> totems = register(new Setting("Totems", Boolean.valueOf(false), "TotemHUD"));
+    private final Setting<Boolean> Crystal  = register(new Setting("Crystals", Boolean.valueOf(false), "Crystal Counter yes?"));
     private final Setting<Boolean> greeter = register(new Setting("Welcomer", Boolean.valueOf(false), "The time"));
     private final Setting<Boolean> speed = register(new Setting("Speed", Boolean.valueOf(false), "Your Speed"));
     private final Setting<Boolean> potions = register(new Setting("Potions", Boolean.valueOf(false), "Your Speed"));
@@ -375,7 +376,7 @@ public class HUD extends Module {
     public void renderLag() {
         int width = renderer.scaledWidth;
         if (OyVey.serverManager.isServerNotResponding()) {
-            String text = ChatFormatting.RED + "Server lagging for " + MathUtil.round((float) OyVey.serverManager.serverRespondingTime() / 1000.0F, 1) + "s.";
+            String text = ChatFormatting.RED + "Server being chinese for " + MathUtil.round((float) OyVey.serverManager.serverRespondingTime() / 1000.0F, 1) + "s.";
             renderer.drawString(text, width / 2.0F - renderer.getStringWidth(text) / 2.0F + 2.0F, 20.0F, color, true);
         }
     }
@@ -401,6 +402,31 @@ public class HUD extends Module {
             GlStateManager.disableLighting();
             GlStateManager.disableDepth();
             renderer.drawStringWithShadow(totems + "", (x + 19 - 2 - renderer.getStringWidth(totems + "")), (y + 9), 16777215);
+            GlStateManager.enableDepth();
+            GlStateManager.disableLighting();
+        }
+    }
+    public void renderCrystal() {
+        int width = renderer.scaledWidth;
+        int height = renderer.scaledHeight;
+        int crystals = mc.player.inventory.mainInventory.stream().filter(itemStack -> (itemStack.getItem() == Items.END_CRYSTAL)).mapToInt(ItemStack::getCount).sum();
+        if (mc.player.getHeldItemOffhand().getItem() == Items.END_CRYSTAL)
+            crystals += mc.player.getHeldItemOffhand().getCount();
+        if (crystals > 0) {
+            GlStateManager.enableTexture2D();
+            int i = width / 2;
+            int iteration = 0;
+            int y = height - 60 - ((mc.player.isInWater() && mc.playerController.gameIsSurvivalOrAdventure()) ? 10 : 0);
+            int x = i - 189 + 180 + 2;
+            GlStateManager.enableDepth();
+            RenderUtil.itemRender.zLevel = 200.0F;
+            RenderUtil.itemRender.renderItemAndEffectIntoGUI(totem, x, y);
+            RenderUtil.itemRender.renderItemOverlayIntoGUI(mc.fontRenderer, totem, x, y, "");
+            RenderUtil.itemRender.zLevel = 0.0F;
+            GlStateManager.enableTexture2D();
+            GlStateManager.disableLighting();
+            GlStateManager.disableDepth();
+            renderer.drawStringWithShadow(crystals + "", (x + 19 - 2 - renderer.getStringWidth(crystals + "")), (y + 9), 16777215);
             GlStateManager.enableDepth();
             GlStateManager.disableLighting();
         }
