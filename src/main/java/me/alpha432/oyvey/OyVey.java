@@ -110,7 +110,7 @@ public class OyVey {
         inventoryManager = null;
         moduleManager = null;
         textManager = null;
-        LOGGER.info("zori unloaded!\n");
+        LOGGER.info("zori.rat unloaded!\n");
     }
 
     public static void reload() {
@@ -129,8 +129,10 @@ public class OyVey {
     }
 
     @Mod.EventHandler
+    //bri'ish people be like innit
     public void preInit(FMLPreInitializationEvent event) {
         LOGGER.info("slol lives in vancouver canada and his name is jacob ward");
+        LOGGER.info("zopac is a sped kid");
     }
 
 
